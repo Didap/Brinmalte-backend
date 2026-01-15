@@ -66,9 +66,14 @@
       "inversedBy": "users",
       "configurable": false
     },
-    "token": {
-      "type": "string",
-      "unique": true
+    "phone": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "surname": {
+      "type": "string"
     }
   }
 }
