@@ -4,6 +4,12 @@ export default ({ env }) => {
   const client = env('DATABASE_CLIENT');
 
   const connections = {
+    sqlite: {
+      connection: {
+        filename: path.join(__dirname, '..', env('DATABASE_FILENAME', '.tmp/data.db')),
+      },
+      useNullAsDefault: true,
+    },
     mysql: {
       connection: {
         host: env('DATABASE_HOST'),
