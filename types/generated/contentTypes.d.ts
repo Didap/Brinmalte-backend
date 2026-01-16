@@ -484,6 +484,7 @@ export interface ApiCustomerCustomer extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     name: Schema.Attribute.String;
+    orders: Schema.Attribute.Relation<'oneToMany', 'api::order.order'>;
     phone: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     surname: Schema.Attribute.String;
@@ -512,6 +513,7 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    customer: Schema.Attribute.Relation<'manyToOne', 'api::customer.customer'>;
     customer_email: Schema.Attribute.Email & Schema.Attribute.Required;
     customer_name: Schema.Attribute.String;
     items: Schema.Attribute.Component<'orders.order-item', true>;

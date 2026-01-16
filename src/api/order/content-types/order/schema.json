@@ -44,6 +44,12 @@
         "stripe_session_id": {
             "type": "string",
             "private": true
+        },
+        "customer": {
+            "type": "relation",
+            "relation": "manyToOne",
+            "target": "api::customer.customer",
+            "inversedBy": "orders"
         }
     }
 }
