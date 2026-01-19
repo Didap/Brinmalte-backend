@@ -521,6 +521,7 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::order.order'> &
       Schema.Attribute.Private;
+    order_number: Schema.Attribute.String & Schema.Attribute.Unique;
     publishedAt: Schema.Attribute.DateTime;
     shipping_address: Schema.Attribute.JSON;
     status: Schema.Attribute.Enumeration<

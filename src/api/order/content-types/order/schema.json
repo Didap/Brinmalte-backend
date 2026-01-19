@@ -12,6 +12,10 @@
     },
     "pluginOptions": {},
     "attributes": {
+        "order_number": {
+            "type": "string",
+            "unique": true
+        },
         "customer_email": {
             "type": "email",
             "required": true
