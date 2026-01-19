@@ -7,7 +7,7 @@
     "displayName": "Customer"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
@@ -19,6 +19,9 @@
     },
     "phone": {
       "type": "string"
+    },
+    "address": {
+      "type": "json"
     },
     "user": {
       "type": "relation",
