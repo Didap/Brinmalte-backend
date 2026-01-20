@@ -33,7 +33,8 @@
                 "processing",
                 "shipped",
                 "delivered",
-                "cancelled"
+                "cancelled",
+                "paid"
             ],
             "default": "pending"
         },
