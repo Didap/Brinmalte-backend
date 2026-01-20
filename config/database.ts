@@ -6,7 +6,7 @@ export default ({ env }) => {
   const connections = {
     sqlite: {
       connection: {
-        filename: path.join(__dirname, '..', env('DATABASE_FILENAME', '.tmp/data.db')),
+        filename: path.join(process.cwd(), env('DATABASE_FILENAME', '.tmp/data.db')),
       },
       useNullAsDefault: true,
     },
@@ -31,20 +31,20 @@ export default ({ env }) => {
     postgres: {
       connection: env('DATABASE_URL')
         ? {
-            connectionString: env('DATABASE_URL'),
-            ssl: { rejectUnauthorized: false },
-          }
+          connectionString: env('DATABASE_URL'),
+          ssl: { rejectUnauthorized: false },
+        }
         : {
-            host: env('DATABASE_HOST'),
-            port: env.int('DATABASE_PORT'),
-            database: env('DATABASE_NAME'),
-            user: env('DATABASE_USERNAME'),
-            password: env('DATABASE_PASSWORD'),
-            ssl: env.bool('DATABASE_SSL', false)
-              ? { rejectUnauthorized: false }
-              : false,
-            schema: env('DATABASE_SCHEMA', 'public'),
-          },
+          host: env('DATABASE_HOST'),
+          port: env.int('DATABASE_PORT'),
+          database: env('DATABASE_NAME'),
+          user: env('DATABASE_USERNAME'),
+          password: env('DATABASE_PASSWORD'),
+          ssl: env.bool('DATABASE_SSL', false)
+            ? { rejectUnauthorized: false }
+            : false,
+          schema: env('DATABASE_SCHEMA', 'public'),
+        },
       pool: { min: env.int('DATABASE_POOL_MIN', 2), max: env.int('DATABASE_POOL_MAX', 10) },
     },
   };

@@ -24,5 +24,34 @@ export default {
         } catch (e) {
             console.error('[Lifecycle] Failed to generate order number:', e);
         }
+    },
+    async afterUpdate(event) {
+        const { result, params } = event;
+        const { data } = params;
+
+        if (data && result) {
+            try {
+                let action = "UPDATE";
+                let details = "Order updated.";
+
+                // Basic heuristic for status change
+                // We cannot easily compare old/new without a beforeUpdate fetch, but we can log that 'status' was in the payload.
+                if (data.status) {
+                    action = "STATUS_CHANGE";
+                    details = `Status updated to ${data.status}`;
+                }
+
+                await strapi.documents('api::order-log.order-log').create({
+                    data: {
+                        action: action,
+                        details: JSON.stringify(data),
+                        order: result.documentId || result.id,
+                        publishedAt: new Date(),
+                    }
+                });
+            } catch (err) {
+                console.error("Error creating order log:", err);
+            }
+        }
     }
 };

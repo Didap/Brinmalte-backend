@@ -54,6 +54,12 @@
             "relation": "manyToOne",
             "target": "api::customer.customer",
             "inversedBy": "orders"
+        },
+        "logs": {
+            "type": "relation",
+            "relation": "oneToMany",
+            "target": "api::order-log.order-log",
+            "mappedBy": "order"
         }
     }
 }
