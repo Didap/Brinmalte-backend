@@ -12,6 +12,11 @@ export default factories.createCoreController('api::customer.customer', ({ strap
             return ctx.unauthorized('You must be logged in to create a customer profile.');
         }
 
+        // Remove user field if sent by frontend (Strapi blocks relations in API)
+        if (ctx.request.body.data?.user) {
+            delete ctx.request.body.data.user;
+        }
+
         // Force link the customer to the authenticated user
         ctx.request.body.data.user = user.id;
 
