@@ -17,12 +17,14 @@ const IMAGES_DIR = 'c:/Users/aless/.gemini/antigravity/brain/42db81cb-5fd2-478b-
 
 async function main() {
     console.log('Starting Strapi instance...');
+    // Use distDir to load compiled configuration (JS) instead of TS source
     const strapi = createStrapi({ distDir: './dist' });
     await strapi.load();
     console.log('Strapi loaded successfully.');
 
     try {
         for (const cat of CATEGORIES) {
+            // ... (rest of loop logic is fine, omitted for brevity if not changing)
             console.log(`Processing category: ${cat.name}...`);
 
             // Check if exists
@@ -37,65 +39,73 @@ async function main() {
 
             // Upload Image
             let imageId = null;
-            const files = fs.readdirSync(IMAGES_DIR);
-            const imageFile = files.find(f => f.startsWith(cat.image.replace('.png', '')) && f.endsWith('.png'));
+            if (fs.existsSync(IMAGES_DIR)) {
+                const files = fs.readdirSync(IMAGES_DIR);
+                const imageFile = files.find(f => f.startsWith(cat.image.replace('.png', '')) && f.endsWith('.png'));
 
-            if (imageFile) {
-                const filePath = path.join(IMAGES_DIR, imageFile);
-                console.log(`- Found image: ${filePath}`);
+                if (imageFile) {
+                    const filePath = path.join(IMAGES_DIR, imageFile);
+                    console.log(`- Found image: ${filePath}`);
 
-                const stats = fs.statSync(filePath);
+                    const stats = fs.statSync(filePath);
 
-                // Manual Upload Flow
-                const buffer = fs.readFileSync(filePath);
-                const ext = path.extname(imageFile);
-                const basename = path.basename(imageFile, ext);
+                    // Manual Upload Flow
+                    const buffer = fs.readFileSync(filePath);
+                    const ext = path.extname(imageFile);
+                    const basename = path.basename(imageFile, ext);
 
-                const file: any = {
-                    name: imageFile,
-                    alternativeText: cat.name,
-                    caption: cat.name,
-                    width: 1024,
-                    height: 1024,
-                    formats: null,
-                    hash: `${basename}_${Date.now()}`,
-                    ext: ext,
-                    mime: 'image/png',
-                    size: stats.size / 1000,
-                    url: null,
-                    provider: 'cloudinary',
-                    provider_metadata: null,
-                    folderPath: '/',
-                    buffer: buffer,
-                    stream: fs.createReadStream(filePath)
-                };
+                    const file: any = {
+                        name: imageFile,
+                        alternativeText: cat.name,
+                        caption: cat.name,
+                        width: 1024,
+                        height: 1024,
+                        formats: null,
+                        hash: `${basename}_${Date.now()}`,
+                        ext: ext,
+                        mime: 'image/png',
+                        size: stats.size / 1000,
+                        url: null,
+                        provider: 'cloudinary', // Ensure connection to Cloudinary
+                        provider_metadata: null,
+                        folderPath: '/',
+                        buffer: buffer,
+                        stream: fs.createReadStream(filePath)
+                    };
 
-                // 1. Upload to Cloudinary via Provider
-                await strapi.plugin('upload').provider.upload(file);
-
-                if (!file.url) {
-                    throw new Error('Upload failed: no URL returned');
-                }
-
-                console.log(`- Uploaded to: ${file.url}`);
-
-                // 2. Create DB Entry
-                delete file.buffer;
-                delete file.stream;
-
-                const uploadedDoc = await strapi.documents('plugin::upload.file').create({
-                    data: {
-                        ...file,
-                        publishedAt: new Date(),
+                    // 1. Upload to Cloudinary via Provider
+                    try {
+                        await strapi.plugin('upload').provider.upload(file);
+                    } catch (uploadErr) {
+                        console.error('Upload provider error:', uploadErr);
+                        // Fallback? No, just continue without image
                     }
-                });
 
-                if (uploadedDoc) {
-                    imageId = (uploadedDoc as any).id; // Use integer ID for media relation
-                    console.log(`- Image created in DB. ID: ${imageId}`);
+                    if (file.url) {
+                        console.log(`- Uploaded to: ${file.url}`);
+
+                        // 2. Create DB Entry
+                        delete file.buffer;
+                        delete file.stream;
+
+                        const uploadedDoc = await strapi.documents('plugin::upload.file').create({
+                            data: {
+                                ...file,
+                                publishedAt: new Date(),
+                            }
+                        });
+
+                        if (uploadedDoc) {
+                            imageId = (uploadedDoc as any).id; // Use integer ID for media relation
+                            console.log(`- Image created in DB. ID: ${imageId}`);
+                        }
+                    }
+
+                } else {
+                    console.warn(`- WARNING: Image not found for ${cat.name} in ${IMAGES_DIR}`);
                 }
             } else {
-                console.warn(`- WARNING: Image not found for ${cat.name} (looked for ${cat.image})`);
+                console.warn(`- WARNING: Artifacts directory not found at ${IMAGES_DIR}`);
             }
 
             // Create Category
@@ -119,6 +129,7 @@ async function main() {
         if (error.details) {
             console.error('Error Details:', JSON.stringify(error.details, null, 2));
         }
+        process.exit(1); // Exit with error code
     } finally {
         process.exit(0);
     }

@@ -561,7 +561,7 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
     publishedAt: Schema.Attribute.DateTime;
     shipping_address: Schema.Attribute.JSON;
     status: Schema.Attribute.Enumeration<
-      ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
+      ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'paid']
     > &
       Schema.Attribute.DefaultTo<'pending'>;
     stripe_session_id: Schema.Attribute.String & Schema.Attribute.Private;

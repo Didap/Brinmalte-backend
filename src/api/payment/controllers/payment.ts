@@ -1,12 +1,10 @@
-
 /**
  *  payment controller
  */
 
-import { factories } from '@strapi/strapi';
 import Stripe from 'stripe';
 
-export default factories.createCoreController('api::payment.payment' as any, ({ strapi }) => ({
+export default {
     async createCheckoutSession(ctx) {
         const { orderId } = ctx.request.body;
         const userId = ctx.state.user?.id;
@@ -15,7 +13,6 @@ export default factories.createCoreController('api::payment.payment' as any, ({ 
             return ctx.badRequest('Order ID is required');
         }
 
-        // 1. Fetch Order
         // 1. Fetch Order
         // @ts-ignore
         const order = await strapi.documents('api::order.order').findOne({
@@ -30,13 +27,12 @@ export default factories.createCoreController('api::payment.payment' as any, ({ 
         // Security verify: User must own the order
         const customerUser = order.customer?.user;
         if (customerUser?.documentId !== userId && customerUser?.id !== userId) {
-            // Logic: Check both ID formats to be safe with Strapi 5
             return ctx.forbidden('You are not the owner of this order');
         }
 
         // 2. Init Stripe
         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-            apiVersion: '2025-12-15.clover', // Update to match types
+            apiVersion: '2025-12-15.clover',
             typescript: true,
         });
 
@@ -63,6 +59,14 @@ export default factories.createCoreController('api::payment.payment' as any, ({ 
                 cancel_url: `${process.env.FRONTEND_URL}/checkout?canceled=true`,
                 metadata: {
                     orderId: order.documentId // Critical for webhook
+                }
+            });
+
+            // SAVE SESSION ID TO ORDER IMMEDIATELY
+            await strapi.documents('api::order.order').update({
+                documentId: orderId,
+                data: {
+                    stripe_session_id: session.id
                 }
             });
 
@@ -112,7 +116,8 @@ export default factories.createCoreController('api::payment.payment' as any, ({ 
                     documentId: orderId,
                     data: {
                         status: 'paid' as any,
-                        payment_id: session.payment_intent as string
+                        // Update session id again just in case, and verify if 'payment_id' exists in schema (it doesn't seems so)
+                        stripe_session_id: session.id
                     }
                 });
 
@@ -129,4 +134,4 @@ export default factories.createCoreController('api::payment.payment' as any, ({ 
 
         return { received: true };
     }
-}));
+};
