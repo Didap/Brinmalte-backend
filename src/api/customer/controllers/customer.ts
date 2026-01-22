@@ -30,15 +30,23 @@ export default factories.createCoreController('api::customer.customer', ({ strap
         const user = ctx.state.user;
 
         if (!user) {
-            // If no user, maybe allow if public permissions are open? Or block?
-            // Default behavior checks permissions.
-            // But if we want to RESTRICT to own data for Authenticated users:
             return ctx.unauthorized('You must be logged in to view customer profiles.');
         }
 
-        // Force filter by current user
-        if (!ctx.query.filters) ctx.query.filters = {};
-        (ctx.query.filters as any).user = { id: { $eq: user.id } };
+        // Check if user is Admin using Strapi Query Engine (more reliable)
+        const fullUser = await strapi.documents('plugin::users-permissions.user').findOne({
+            documentId: user.documentId, // Use documentId in Strapi v5 preferably, or id if v4
+            populate: ['role']
+        });
+
+        // Use 'role' from fullUser if available, otherwise fallback/error
+        const isAdmin = fullUser?.role?.name === 'Admin' || fullUser?.role?.type === 'admin';
+
+        // Only filter by user if NOT admin
+        if (!isAdmin) {
+            if (!ctx.query.filters) ctx.query.filters = {};
+            (ctx.query.filters as any).user = { id: { $eq: user.id } };
+        }
 
         const { data, meta } = await super.find(ctx);
         return { data, meta };

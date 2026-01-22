@@ -62,9 +62,6 @@
       "allowedTypes": [
         "files"
       ]
-    },
-    "technical_data": {
-      "type": "json"
     }
   }
 }

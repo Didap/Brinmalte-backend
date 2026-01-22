@@ -19,6 +19,38 @@ export default {
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
     // database seeding logic removed for production
 
+    // Recalculate customer stats on startup (Dev convenience)
+    try {
+      console.log('Bootstrap: Recalculating Customer Stats...');
+      // Note: Use document service API
+      const customers = await strapi.documents('api::customer.customer').findMany({ populate: ['orders'] });
+
+      for (const customer of customers) {
+        const orders = customer.orders;
+
+        let totalSpent = 0;
+        let ordersCount = 0;
+
+        if (Array.isArray(orders)) {
+          totalSpent = orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+          ordersCount = orders.length;
+        }
+
+        if (customer.documentId) {
+          await strapi.documents('api::customer.customer').update({
+            documentId: customer.documentId,
+            data: {
+              total_spent: totalSpent,
+              orders_count: ordersCount
+            }
+          });
+        }
+      }
+      console.log(`Bootstrap: Updated stats for ${customers.length} customers.`);
+    } catch (e) {
+      console.error('Bootstrap: Failed to recalculate customer stats', e);
+    }
+
     // Initial Check for Geo Data
     const fs = require('fs');
     const path = require('path');

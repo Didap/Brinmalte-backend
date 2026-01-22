@@ -115,18 +115,8 @@ export default {
                 await strapi.documents('api::order.order').update({
                     documentId: orderId,
                     data: {
-                        status: 'paid' as any,
-                        // Update session id again just in case, and verify if 'payment_id' exists in schema (it doesn't seems so)
+                        order_status: 'paid' as any,
                         stripe_session_id: session.id
-                    }
-                });
-
-                // Log to OrderLog
-                await strapi.documents('api::order-log.order-log').create({
-                    data: {
-                        action: 'payment_success',
-                        description: `Pagamento di €${session.amount_total / 100} ricevuto via Stripe. Session ID: ${session.id}`,
-                        order: orderId
                     }
                 });
             }

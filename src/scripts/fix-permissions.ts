@@ -33,6 +33,13 @@ async function fixPermissions() {
             // Category permissions (read-only usually)
             { action: 'api::category.category.find' },
             { action: 'api::category.category.findOne' },
+            // Customer permissions
+            { action: 'api::customer.customer.find' },
+            { action: 'api::customer.customer.findOne' },
+            { action: 'api::customer.customer.update' },
+            // Order permissions (needed for history)
+            { action: 'api::order.order.find' },
+            { action: 'api::order.order.findOne' },
         ];
 
         let addedCount = 0;

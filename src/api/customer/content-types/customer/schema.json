@@ -34,6 +34,14 @@
       "relation": "oneToMany",
       "target": "api::order.order",
       "mappedBy": "customer"
+    },
+    "total_spent": {
+      "type": "decimal",
+      "default": 0
+    },
+    "orders_count": {
+      "type": "integer",
+      "default": 0
     }
   }
 }

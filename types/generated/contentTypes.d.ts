@@ -486,9 +486,11 @@ export interface ApiCustomerCustomer extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     name: Schema.Attribute.String;
     orders: Schema.Attribute.Relation<'oneToMany', 'api::order.order'>;
+    orders_count: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
     phone: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     surname: Schema.Attribute.String;
+    total_spent: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -496,41 +498,6 @@ export interface ApiCustomerCustomer extends Struct.CollectionTypeSchema {
       'oneToOne',
       'plugin::users-permissions.user'
     >;
-  };
-}
-
-export interface ApiOrderLogOrderLog extends Struct.CollectionTypeSchema {
-  collectionName: 'order_logs';
-  info: {
-    description: 'Log of changes made to orders';
-    displayName: 'Order Log';
-    pluralName: 'order-logs';
-    singularName: 'order-log';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    action: Schema.Attribute.String & Schema.Attribute.Required;
-    changedBy: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    details: Schema.Attribute.Text;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::order-log.order-log'
-    > &
-      Schema.Attribute.Private;
-    order: Schema.Attribute.Relation<'manyToOne', 'api::order.order'>;
-    publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
   };
 }
 
@@ -556,7 +523,6 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::order.order'> &
       Schema.Attribute.Private;
-    logs: Schema.Attribute.Relation<'oneToMany', 'api::order-log.order-log'>;
     order_number: Schema.Attribute.String & Schema.Attribute.Unique;
     order_status: Schema.Attribute.Enumeration<
       ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'paid']
@@ -604,7 +570,6 @@ export interface ApiProductProduct extends Struct.CollectionTypeSchema {
     slug: Schema.Attribute.UID<'name'> & Schema.Attribute.Required;
     stock: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
     subtitle: Schema.Attribute.String;
-    technical_data: Schema.Attribute.JSON;
     technical_sheet: Schema.Attribute.Media<'files'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -1124,7 +1089,6 @@ declare module '@strapi/strapi' {
       'admin::user': AdminUser;
       'api::category.category': ApiCategoryCategory;
       'api::customer.customer': ApiCustomerCustomer;
-      'api::order-log.order-log': ApiOrderLogOrderLog;
       'api::order.order': ApiOrderOrder;
       'api::product.product': ApiProductProduct;
       'plugin::content-releases.release': PluginContentReleasesRelease;
