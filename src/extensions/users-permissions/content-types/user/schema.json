@@ -71,12 +71,6 @@
       "relation": "oneToOne",
       "target": "api::customer.customer",
       "mappedBy": "user"
-    },
-    "orders": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::order.order",
-      "mappedBy": "user"
     }
   }
 }

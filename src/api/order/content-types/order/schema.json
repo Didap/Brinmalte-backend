@@ -26,7 +26,7 @@
         "shipping_address": {
             "type": "json"
         },
-        "status": {
+        "order_status": {
             "type": "enumeration",
             "enum": [
                 "pending",

@@ -36,9 +36,9 @@ export default {
 
                 // Basic heuristic for status change
                 // We cannot easily compare old/new without a beforeUpdate fetch, but we can log that 'status' was in the payload.
-                if (data.status) {
+                if (data.order_status) {
                     action = "STATUS_CHANGE";
-                    details = `Status updated to ${data.status}`;
+                    details = `Status updated to ${data.order_status}`;
                 }
 
                 await strapi.documents('api::order-log.order-log').create({

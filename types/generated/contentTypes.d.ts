@@ -558,12 +558,12 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     logs: Schema.Attribute.Relation<'oneToMany', 'api::order-log.order-log'>;
     order_number: Schema.Attribute.String & Schema.Attribute.Unique;
-    publishedAt: Schema.Attribute.DateTime;
-    shipping_address: Schema.Attribute.JSON;
-    status: Schema.Attribute.Enumeration<
+    order_status: Schema.Attribute.Enumeration<
       ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'paid']
     > &
       Schema.Attribute.DefaultTo<'pending'>;
+    publishedAt: Schema.Attribute.DateTime;
+    shipping_address: Schema.Attribute.JSON;
     stripe_session_id: Schema.Attribute.String & Schema.Attribute.Private;
     total: Schema.Attribute.Decimal;
     updatedAt: Schema.Attribute.DateTime;
@@ -1087,7 +1087,6 @@ export interface PluginUsersPermissionsUser
       'plugin::users-permissions.user'
     > &
       Schema.Attribute.Private;
-    orders: Schema.Attribute.Relation<'oneToMany', 'api::order.order'>;
     password: Schema.Attribute.Password &
       Schema.Attribute.Private &
       Schema.Attribute.SetMinMaxLength<{
