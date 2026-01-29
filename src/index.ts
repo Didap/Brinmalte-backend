@@ -1,4 +1,8 @@
 import type { Core } from '@strapi/strapi';
+import dns from 'node:dns';
+
+// Fix: Force IPv4 to avoid ECONNRESET issues with Resend/Node/Localhost
+dns.setDefaultResultOrder('ipv4first');
 
 export default {
   /**

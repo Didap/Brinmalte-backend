@@ -1,4 +1,7 @@
 // Helper to update customer stats
+import { sendEmail } from '../../../../services/email';
+import { getOrderConfirmationTemplate, getOrderShippedTemplate } from '../../../../services/email-templates';
+
 const updateCustomerStats = async (customerId) => {
     if (!customerId) return;
 
@@ -65,18 +68,78 @@ export default {
         }
     },
 
+    async beforeUpdate(event) {
+        const { params } = event;
+        // Capture previous status to check for changes
+        try {
+            const order = await strapi.documents('api::order.order').findOne({
+                documentId: params.documentId,
+                fields: ['order_status']
+            });
+            if (order) {
+                event.state = { previousStatus: order.order_status };
+            }
+        } catch (e) {
+            console.error('[Lifecycle] Failed in beforeUpdate:', e);
+        }
+    },
+
     async afterUpdate(event) {
-        const { result } = event;
+        const { result, state } = event;
+        const previousStatus = state?.previousStatus;
+        const newStatus = result.order_status;
+
+        console.log(`[Lifecycle DEBUG] Order ${result.documentId} Update: ${previousStatus} -> ${newStatus}`);
+
         // Recalculate stats for the customer of this order
         try {
             if (result && result.documentId) {
                 const orderWithCustomer = await strapi.documents('api::order.order').findOne({
                     documentId: result.documentId,
-                    populate: ['customer']
-                });
+                    populate: ['customer', 'items', 'items.product']
+                }) as any;
 
                 if (orderWithCustomer?.customer?.documentId) {
                     await updateCustomerStats(orderWithCustomer.customer.documentId);
+                }
+
+                // --- EMAIL NOTIFICATIONS ---
+                if (orderWithCustomer && orderWithCustomer.customer_email) {
+
+                    // 1. Order Paid (Confirmation)
+                    // Trigger when status changes to 'paid' OR 'processing' from something else (like pending)
+                    // We avoid sending if it was already paid/processing to avoid duplicates
+                    const isNowPaid = ['paid', 'processing'].includes(newStatus);
+                    const wasNotPaid = !['paid', 'processing'].includes(previousStatus);
+
+                    if (isNowPaid && wasNotPaid) {
+                        try {
+                            const html = getOrderConfirmationTemplate(orderWithCustomer);
+                            await sendEmail({
+                                to: orderWithCustomer.customer_email,
+                                subject: `Conferma Ordine ${orderWithCustomer.order_number}`,
+                                html
+                            });
+                            console.log(`[Lifecycle] Confirmation email sent for order ${orderWithCustomer.documentId}`);
+                        } catch (err) {
+                            console.error(`[Lifecycle] Failed to send confirmation email:`, err);
+                        }
+                    }
+
+                    // 2. Order Shipped
+                    if (newStatus === 'shipped' && previousStatus !== 'shipped') {
+                        try {
+                            const html = getOrderShippedTemplate(orderWithCustomer);
+                            await sendEmail({
+                                to: orderWithCustomer.customer_email,
+                                subject: `Il tuo ordine ${orderWithCustomer.order_number} è stato spedito!`,
+                                html
+                            });
+                            console.log(`[Lifecycle] Shipped email sent for order ${orderWithCustomer.documentId}`);
+                        } catch (err) {
+                            console.error(`[Lifecycle] Failed to send shipped email:`, err);
+                        }
+                    }
                 }
             }
         } catch (e) {

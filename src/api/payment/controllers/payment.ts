@@ -79,6 +79,9 @@ export default {
     },
 
     async webhook(ctx) {
+        console.log('--- STRIPE WEBHOOK RECEIVED ---');
+        console.log('Headers:', ctx.request.headers);
+
         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
             apiVersion: '2025-12-15.clover',
             typescript: true,

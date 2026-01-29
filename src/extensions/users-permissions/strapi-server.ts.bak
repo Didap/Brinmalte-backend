@@ -1,0 +1,42 @@
+/**
+ * Override users-permissions plugin to send confirmation email with Resend
+ * instead of Strapi's default email provider
+ */
+import { sendConfirmationEmail } from '../../services/email';
+
+export default (plugin) => {
+    // Store original register controller
+    const originalRegister = plugin.controllers.auth.register;
+
+    // Override register to send email via Resend after Strapi creates the user
+    plugin.controllers.auth.register = async (ctx) => {
+        const { email } = ctx.request.body;
+
+        // Call original register - Strapi handles confirmationToken and confirmed=false
+        const result = await originalRegister(ctx);
+
+        // If registration succeeded and we have a user, send confirmation email via Resend
+        // Strapi stores the confirmationToken in the user record
+        if (ctx.response.status === 200 && email) {
+            try {
+                // Fetch the just-created user to get the confirmationToken
+                const user = await strapi.db.query('plugin::users-permissions.user').findOne({
+                    where: { email: email.toLowerCase() },
+                    select: ['confirmationToken', 'email'],
+                });
+
+                if (user?.confirmationToken) {
+                    await sendConfirmationEmail(email, user.confirmationToken);
+                    strapi.log.info(`📧 Confirmation email sent to ${email}`);
+                }
+            } catch (err) {
+                strapi.log.error(`Failed to send confirmation email to ${email}:`, err);
+                // Don't fail registration if email fails
+            }
+        }
+
+        return result;
+    };
+
+    return plugin;
+};
