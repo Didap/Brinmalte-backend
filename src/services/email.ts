@@ -4,7 +4,17 @@
 import { Resend } from 'resend';
 import { getEmailConfirmationTemplate } from './email-templates';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend: Resend | null = null;
+
+const getResend = () => {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('Missing RESEND_API_KEY environment variable');
+  }
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+};
 
 interface SendEmailOptions {
   to: string;
@@ -13,11 +23,7 @@ interface SendEmailOptions {
 }
 
 export const sendEmail = async ({ to, subject, html }: SendEmailOptions) => {
-  if (!process.env.RESEND_API_KEY) {
-    throw new Error('Missing RESEND_API_KEY environment variable');
-  }
-
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: 'BrinMalte <noreply@brinmalte.it>',
     to,
     subject,
@@ -32,8 +38,8 @@ export const sendEmail = async ({ to, subject, html }: SendEmailOptions) => {
 };
 
 export const sendConfirmationEmail = async (email: string, token: string) => {
-  const backendUrl = process.env.HOST === '0.0.0.0' ? 'http://localhost:1337' : `http://${process.env.HOST}:${process.env.PORT}`;
-  const confirmationUrl = `${backendUrl}/api/email-confirmation/confirm?token=${token}`;
+  const baseUrl = process.env.EMAIL_CONFIRMATION_URL || 'http://localhost:1337/api/email-confirmation/confirm';
+  const confirmationUrl = `${baseUrl}?token=${token}`;
 
   const html = getEmailConfirmationTemplate(confirmationUrl);
 
