@@ -605,6 +605,7 @@ export interface ApiProfessionalProfessional
       'api::professional.professional'
     > &
       Schema.Attribute.Private;
+    name: Schema.Attribute.String;
     profilePhoto: Schema.Attribute.Media<'images'>;
     publishedAt: Schema.Attribute.DateTime;
     skills: Schema.Attribute.Relation<'manyToMany', 'api::category.category'>;

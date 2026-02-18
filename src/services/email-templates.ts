@@ -211,3 +211,99 @@ export const getEmailConfirmationTemplate = (confirmationUrl: string) => {
     </html>
     `;
 };
+
+const FORM_TITLES: Record<string, string> = {
+    contatto: 'Nuovo Messaggio di Contatto',
+    preventivo: 'Richiesta Preventivo',
+    albo: 'Iscrizione Albo Applicatori',
+};
+
+const FIELD_LABELS: Record<string, string> = {
+    nome: 'Nome / Azienda',
+    cognome: 'Cognome',
+    email: 'Email',
+    telefono: 'Telefono',
+    cellulare: 'Cellulare',
+    messaggio: 'Messaggio',
+    citta: 'Città / Zona',
+    interesse: 'Interesse',
+    tipoIntervento: 'Tipo Intervento',
+    dettagli: 'Dettagli Richiesta',
+    ragioneSociale: 'Ragione Sociale',
+    ruolo: 'Ruolo',
+    partitaIva: 'Partita IVA',
+    sede: 'Sede Operativa',
+    categoria: 'Categoria Principale',
+};
+
+export const getContactFormTemplate = (type: string, data: Record<string, string>) => {
+    const title = FORM_TITLES[type] || 'Nuovo Messaggio';
+
+    const rows = Object.entries(data)
+        .filter(([, value]) => value && value.trim())
+        .map(([key, value]) => {
+            const label = FIELD_LABELS[key] || key;
+            const isLongText = value.length > 80 || value.includes('\n');
+            const displayValue = value.replace(/\n/g, '<br>');
+
+            if (isLongText) {
+                return `
+                    <tr>
+                        <td colspan="2" style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
+                            <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">${label}</div>
+                            <div style="color: #111; font-size: 14px; line-height: 1.6;">${displayValue}</div>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            return `
+                <tr>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; font-size: 13px; width: 140px; vertical-align: top;">${label}</td>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #111; font-size: 14px; font-weight: 500;">${displayValue}</td>
+                </tr>
+            `;
+        })
+        .join('');
+
+    return `
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+      ${emailHead}
+      <title>${title} - BrinMalte</title>
+    </head>
+    <body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
+      <div class="email-container" style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e5e7eb;">
+
+        <!-- Header -->
+        <div style="background-color: #000000; padding: 25px; text-align: center;">
+            <h1 style="color: #ED8900; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">BrinMalte</h1>
+        </div>
+
+        <!-- Title -->
+        <div style="padding: 30px 30px 10px; text-align: center; background-color: #ffffff;">
+          <div style="width: 56px; height: 56px; background-color: #ED8900; border-radius: 50%; margin: 0 auto 20px; line-height: 56px; text-align: center;">
+            <span style="font-size: 24px; color: #ffffff; line-height: 56px; display: block;">&#9993;</span>
+          </div>
+          <h2 style="margin: 0 0 5px; color: #111111; font-size: 22px; font-weight: 600;">${title}</h2>
+          <p style="margin: 0; color: #6b7280; font-size: 14px;">Ricevuto dal sito web</p>
+        </div>
+
+        <!-- Data -->
+        <div style="padding: 20px 30px 30px; background-color: #ffffff;">
+          <table style="width: 100%; border-collapse: collapse;">
+            ${rows}
+          </table>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #111111; color: #888888; padding: 20px; text-align: center; font-size: 12px;">
+          <p style="margin: 0;">BrinMalte - Edilizia Professionale</p>
+          <p style="margin: 5px 0 0;">Rispondi direttamente all'email del cliente.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+    `;
+};
