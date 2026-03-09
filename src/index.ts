@@ -87,7 +87,7 @@ export default {
             try {
               await strapi.documents('api::product.product').update({
                 documentId: existingDocId,
-                data: { stock },
+                data: { stock, price: parseFloat(price) },
                 status: 'published',
               });
               updated++;
