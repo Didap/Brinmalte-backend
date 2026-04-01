@@ -62,6 +62,9 @@
       "allowedTypes": [
         "files"
       ]
+    },
+    "video": {
+      "type": "string"
     }
   }
 }
