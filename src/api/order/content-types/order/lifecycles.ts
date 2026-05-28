@@ -1,6 +1,6 @@
 // Helper to update customer stats
 import { sendEmail } from '../../../../services/email';
-import { getOrderConfirmationTemplate, getOrderShippedTemplate } from '../../../../services/email-templates';
+import { getOrderConfirmationTemplate, getOrderShippedTemplate, getOrderPickupBookedTemplate } from '../../../../services/email-templates';
 
 const updateCustomerStats = async (customerId) => {
     if (!customerId) return;
@@ -52,15 +52,29 @@ export default {
                     }
                 });
 
-                // Update Customer Stats
-                // We need to fetch the order with customer populated to know who to update
+                // Fetch order with relations needed for stats + email
                 const orderWithCustomer = await strapi.documents('api::order.order').findOne({
                     documentId: result.documentId,
-                    populate: ['customer']
-                });
+                    populate: ['customer', 'items', 'items.product']
+                }) as any;
 
                 if (orderWithCustomer?.customer?.documentId) {
                     await updateCustomerStats(orderWithCustomer.customer.documentId);
+                }
+
+                // Send "pickup booked" email for pay-in-store orders (afterUpdate covers the paid-online cases)
+                if (orderWithCustomer?.payment_method === 'in_store' && orderWithCustomer?.customer_email) {
+                    try {
+                        const html = getOrderPickupBookedTemplate(orderWithCustomer);
+                        await sendEmail({
+                            to: orderWithCustomer.customer_email,
+                            subject: `Ritiro prenotato — Ordine ${orderWithCustomer.order_number}`,
+                            html
+                        });
+                        console.log(`[Lifecycle] Pickup-booked email sent for order ${orderWithCustomer.documentId}`);
+                    } catch (err) {
+                        console.error(`[Lifecycle] Failed to send pickup-booked email:`, err);
+                    }
                 }
             }
         } catch (e) {

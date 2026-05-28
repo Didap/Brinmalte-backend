@@ -3,6 +3,48 @@ const formatPrice = (amount: any) => {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(Number(amount) || 0);
 };
 
+// Store info — keep in sync with frontend/src/config/store.ts
+const STORE_INFO = {
+  name: 'Brinmalte',
+  address: 'Via Enrico Fermi, 12a',
+  city: 'Brindisi',
+  zip: '72100',
+  province: 'BR',
+  phone: '+39 000 0000000',
+  hoursSummary: 'Lun–Ven 06:00–14:00 / 16:00–18:30 · Sab 06:00–13:00 · Dom chiuso',
+};
+
+const ITALIAN_WEEKDAYS = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+const ITALIAN_MONTHS = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+
+const formatPickupSlot = (slot: any) => {
+  if (!slot || !slot.date) return '';
+  const [y, m, d] = String(slot.date).split('-').map(Number);
+  if (!y || !m || !d) return '';
+  const date = new Date(y, m - 1, d);
+  return `${ITALIAN_WEEKDAYS[date.getDay()]} ${d} ${ITALIAN_MONTHS[m - 1]}, ${slot.startTime}–${slot.endTime}`;
+};
+
+const renderPickupBlock = (order: any) => `
+  <div style="background-color: #fafafa; padding: 30px; border-top: 1px solid #eee;">
+    <h3 style="margin-top: 0; color: #111111; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px;">Ritiro in Negozio</h3>
+    <p style="color: #4b5563; line-height: 1.6; margin: 12px 0 0; font-size: 15px;">
+      <strong style="color: #111;">${STORE_INFO.name}</strong><br>
+      ${STORE_INFO.address}<br>
+      ${STORE_INFO.zip} ${STORE_INFO.city} (${STORE_INFO.province})<br>
+      Tel: ${STORE_INFO.phone}
+    </p>
+    ${order.pickup_slot ? `
+      <p style="color: #111111; line-height: 1.6; margin: 18px 0 0; font-size: 15px;">
+        <span style="display: inline-block; background: #ED8900; color: #fff; padding: 6px 12px; border-radius: 4px; font-weight: 600; font-size: 14px;">
+          ${formatPickupSlot(order.pickup_slot)}
+        </span>
+      </p>
+    ` : ''}
+    <p style="color: #6b7280; font-size: 13px; margin-top: 18px;">${STORE_INFO.hoursSummary}</p>
+  </div>
+`;
+
 // Common head styles for forcing light mode
 const emailHead = `
   <meta charset="utf-8">
@@ -99,16 +141,18 @@ export const getOrderConfirmationTemplate = (order: any) => {
           </div>
         </div>
 
-        <!-- Shipping Info -->
+        <!-- Fulfillment Info -->
+        ${order.fulfillment_method === 'pickup' ? renderPickupBlock(order) : `
         <div style="background-color: #fafafa; padding: 30px; border-top: 1px solid #eee;">
           <h3 style="margin-top: 0; color: #111111; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px;">Indirizzo di Spedizione</h3>
           <p style="color: #4b5563; line-height: 1.6; margin: 12px 0 0; font-size: 15px;">
               <strong style="color: #111;">${order.customer_name || 'Cliente'}</strong><br>
-              ${order.shipping_address?.line1 || ''}<br>
-              ${order.shipping_address?.postal_code || ''} ${order.shipping_address?.city || ''}<br>
-              ${order.shipping_address?.country || ''}
+              ${order.shipping_address?.address || order.shipping_address?.line1 || ''}<br>
+              ${order.shipping_address?.zip || order.shipping_address?.postal_code || ''} ${order.shipping_address?.city || ''}<br>
+              ${order.shipping_address?.province ? `(${order.shipping_address.province})` : ''}
           </p>
         </div>
+        `}
 
         <!-- Footer -->
         <div style="background-color: #111111; color: #888888; padding: 20px; text-align: center; font-size: 12px;">
@@ -164,6 +208,73 @@ export const getOrderShippedTemplate = (order: any) => {
     </body>
     </html>
     `;
+};
+
+export const getOrderPickupBookedTemplate = (order: any) => {
+  const itemsList = (order.items || []).map((item: any) => {
+    const price = Number(item.unit_price) || Number(item.product?.price) || 0;
+    const total = price * (item.quantity || 1);
+    const productName = item.product_name || item.product?.name || 'Prodotto';
+    return `
+      <tr style="border-bottom: 1px solid #eeeeee;">
+        <td style="padding: 14px 0; vertical-align: middle;">
+          <div style="font-weight: 600; color: #111111; font-size: 14px;">${productName}</div>
+          <div style="font-size: 13px; color: #666666; margin-top: 2px;">Qt: ${item.quantity}</div>
+        </td>
+        <td style="padding: 14px 0; text-align: right; font-weight: 600; color: #111111;">${formatPrice(total)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+      ${emailHead}
+      <title>Ritiro Prenotato - BrinMalte</title>
+    </head>
+    <body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
+      <div class="email-container" style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e5e7eb;">
+
+        <div style="background-color: #000000; padding: 25px; text-align: center;">
+          <h1 style="color: #ED8900; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">BrinMalte</h1>
+        </div>
+
+        <div style="padding: 40px 30px; text-align: center; border-bottom: 1px solid #f0f0f0; background-color: #ffffff;">
+          <div style="width: 56px; height: 56px; background-color: #ED8900; border-radius: 50%; margin: 0 auto 20px; line-height: 56px; text-align: center;">
+            <span style="font-size: 28px; color: #ffffff; line-height: 56px; display: block;">✓</span>
+          </div>
+          <h2 style="margin: 0 0 10px; color: #111111; font-size: 24px; font-weight: 600;">Ritiro prenotato!</h2>
+          <p style="margin: 0; color: #4b5563; font-size: 16px;">Ti aspettiamo in negozio nella fascia oraria scelta.</p>
+          <p style="margin-top: 6px; color: #6b7280; font-size: 14px;">Ordine <strong style="color: #111;">#${order.order_number}</strong></p>
+        </div>
+
+        ${renderPickupBlock(order)}
+
+        <div style="padding: 30px; background-color: #ffffff; border-top: 1px solid #eee;">
+          <h3 style="margin-top: 0; color: #111111; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #ED8900; padding-bottom: 10px; display: inline-block;">Riepilogo</h3>
+
+          <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            ${itemsList}
+          </table>
+
+          <div style="margin-top: 24px; padding: 16px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 13px; color: #9a3412; text-transform: uppercase; letter-spacing: 0.5px;">Da saldare in negozio</div>
+              <div style="font-size: 12px; color: #c2410c; margin-top: 2px;">Contanti o POS</div>
+            </div>
+            <div style="font-size: 22px; font-weight: 700; color: #ED8900;">${formatPrice(order.total)}</div>
+          </div>
+        </div>
+
+        <div style="background-color: #111111; color: #888888; padding: 20px; text-align: center; font-size: 12px;">
+          <p style="margin: 0;">BrinMalte - Edilizia Professionale</p>
+          <p style="margin: 5px 0 0;">Hai bisogno di modificare il ritiro? Rispondi a questa email.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
 };
 
 export const getEmailConfirmationTemplate = (confirmationUrl: string) => {
