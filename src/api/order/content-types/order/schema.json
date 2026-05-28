@@ -35,8 +35,31 @@
         "shipped",
         "delivered",
         "cancelled",
-        "paid"
+        "paid",
+        "awaiting_pickup",
+        "completed"
       ]
+    },
+    "fulfillment_method": {
+      "type": "enumeration",
+      "default": "shipping",
+      "enum": [
+        "shipping",
+        "pickup"
+      ],
+      "required": true
+    },
+    "pickup_slot": {
+      "type": "json"
+    },
+    "payment_method": {
+      "type": "enumeration",
+      "default": "online",
+      "enum": [
+        "online",
+        "in_store"
+      ],
+      "required": true
     },
     "total": {
       "type": "decimal"
